@@ -8,9 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Recuparation des elements du localStorage
     let userCartItems = []
-    for (let i = 0; i < localStorage.length; i++) {
-        userCartItems.push(JSON.parse(localStorage.getItem(localStorage.key(i))))
+
+    function localStorageToArray(arr) {
+        for (let i = 0; i < localStorage.length; i++) {
+            arr.push(JSON.parse(localStorage.getItem(localStorage.key(i))))
+        }
     }
+
+    localStorageToArray(userCartItems)
 
     // Connection a l'API
     function fetchData() {
@@ -154,6 +159,131 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCart()
     }
     fetchData()
+
+    // *************************************** //
+    // Validation des saisies du formulaires   //
+    // *************************************** //
+
+    // Objet contact à renvoyer à la base de données
+    const userOrderObj = { 'contact': {} }
+
+    // Recuperation des id des produits du localeStorage
+    function idToArray(arr) {
+        let arrTemp = []
+        localStorageToArray(arrTemp)
+        arrTemp.forEach(element => {
+            arr.push(element[0])
+        })
+    }
+
+    // Ecoute sur la validation du formulaire
+    const form = document.getElementsByClassName('cart__order__form')[0]
+    form.addEventListener('submit', orderValidation)
+
+    // Envoie des elements après validation 
+    function orderValidation(e) {
+        e.preventDefault()
+
+        const productsOrdered = []
+        idToArray(productsOrdered)
+        userOrderObj.products = productsOrdered
+
+        if (productsOrdered.length == 0) {
+            alert('le panier est vide')
+        } else if (checkInputs()) {
+            sendData()
+        }
+    }
+
+    // Test avec une expression reguliere
+    function regTest(input, regEx) {
+        return regEx.test(input)
+    }
+
+    // Test et validation des champs de formulaire
+    function checkInputs() {
+        const firstNameValue = firstName.value.trim()
+        const lastNameValue = lastName.value.trim()
+        const addressValue = address.value.trim()
+        const cityValue = city.value.trim()
+        const emailValue = email.value.trim()
+
+        let nameReg = /^[a-z ,.'-]+$/i;
+        let addressReg = /[!@$%^&*(),?":{}|<>]/;
+        let emailReg = /[A-z0-9._-]+[@]{1}[a-zA-Z0-9._-]+[.]{1}[a-zA-Z]{2,10}/;
+
+        let validateCount = 0
+        let checkValidate = false
+
+        if (!regTest(firstNameValue, nameReg)) {
+            firstNameErrorMsg.textContent = "Veuillez entrer un prenom correct"
+            firstNameErrorMsg.style.color = 'red'
+        }
+        else {
+            firstNameErrorMsg.textContent = ""
+            userOrderObj.contact[firstName.name] = firstNameValue
+            validateCount++
+        }
+
+        if (!regTest(lastNameValue, nameReg)) {
+            lastNameErrorMsg.textContent = "Veuillez entrer un nom correct"
+            lastNameErrorMsg.style.color = 'red'
+        }
+        else {
+            lastNameErrorMsg.textContent = ""
+            userOrderObj.contact[lastName.name] = lastNameValue
+            validateCount++
+        }
+
+        if (regTest(addressValue, addressReg)) {
+            addressErrorMsg.textContent = "Veuillez entrer une adresse correcte"
+            addressErrorMsg.style.color = 'red'
+        }
+        else {
+            addressErrorMsg.textContent = ""
+            userOrderObj.contact[address.name] = addressValue
+            validateCount++
+        }
+
+        if (!regTest(cityValue, nameReg)) {
+            cityErrorMsg.textContent = "Veuillez entrer une ville correcte"
+            cityErrorMsg.style.color = 'red'
+        }
+        else {
+            cityErrorMsg.textContent = ""
+            userOrderObj.contact[city.name] = cityValue
+            validateCount++
+        }
+
+        if (!regTest(emailValue, emailReg)) {
+            emailErrorMsg.textContent = "Veuillez entrer un email correct"
+            emailErrorMsg.style.color = 'red'
+        }
+        else {
+            emailErrorMsg.textContent = ""
+            userOrderObj.contact[email.name] = emailValue
+            validateCount++
+        }
+        if (validateCount === 5) {
+            checkValidate = true
+        }
+        return checkValidate
+    }
+
+    // Envoie des données de la commande vers l'API
+    function sendData() {
+        fetch('http://127.0.0.1:3000/api/products/order', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userOrderObj)
+        })
+            .then(res => res.json())
+            .then((res) => window.location.href = "/front/html/confirmation.html?orderId=" + res.orderId)
+            .catch(err => console.error(err))
+    }
 
 })
 

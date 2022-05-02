@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemQuantity = document.getElementById('quantity')
     const addToCartBtn = document.getElementById('addToCart')
 
+    quantity.value = 1
+
     let userColor = ""
     let userQuantity = 0
 
@@ -76,8 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (userColor === "") {
             alert('Vous devez selectionner une couleur')
-        } else if (userQuantity === 0) {
+        } else if (userQuantity <= 0 || isNaN(userQuantity)) {
             alert('Vous devez choisir une quantité superieur à 0')
+        } else if (userQuantity > 100) {
+            // itemQuantity.value = 100
+            alert('Quantité maximun de 100 articles')
         } else {
             userItemKey = urlId + "_" + userColor
 
