@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemColorSelection = document.getElementById('colors')
 
     const urlId = new URLSearchParams(window.location.search).get('id');
-    const url = 'http://127.0.0.1:3000/api/products';
+    const url = 'http://127.0.0.1:3000/api/products' + '/' + urlId;
 
+    // Connection à l'API
     function fetchData() {
         fetch(url)
             .then(res => res.json())
@@ -22,32 +23,29 @@ document.addEventListener('DOMContentLoaded', () => {
             })
     }
 
+    // Rendu visuel des produits 
     function renderItem(data) {
-        data.forEach((item) => {
-            if (item._id === urlId) {
 
-                // Creation des elements
-                let img = createNode('img')
-                img.src = item.imageUrl
-                itemImg[0].append(img)
+        // Creation des elements
+        let img = createNode('img')
+        img.src = data.imageUrl
+        itemImg[0].append(img)
 
-                // Ajout du texte 
-                itemTitle.textContent = item.name
-                itemPrice.textContent = item.price
-                itemDescription.textContent = item.description
+        // Ajout du texte 
+        itemTitle.textContent = data.name
+        itemPrice.textContent = data.price
+        itemDescription.textContent = data.description
 
-                // Creation et ajout des options couleur
-                item.colors.forEach((color) => {
-                    let option = createNode('option')
-                    option.value = color
-                    option.textContent = color
-                    itemColorSelection.append(option)
+        // Creation et ajout des options couleur
+        data.colors.forEach((color) => {
+            let option = createNode('option')
+            option.value = color
+            option.textContent = color
+            itemColorSelection.append(option)
 
-                })
-            }
         })
-    }
 
+    }
     fetchData()
 
     // ******************************************
@@ -56,11 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemQuantity = document.getElementById('quantity')
     const addToCartBtn = document.getElementById('addToCart')
 
-    quantity.value = 1
+    itemQuantity.value = 1
 
     let userColor = ""
-    let userQuantity = 0
+    let userQuantity = 1
 
+    // Ajout des ecoutes sur les elements
     itemColorSelection.addEventListener('change', colorChoice)
     itemQuantity.addEventListener('change', quantityChoice)
     addToCartBtn.addEventListener('click', addUserDataToLocalStorage)
@@ -70,19 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function quantityChoice() {
-        userQuantity = +itemQuantity.value
+        userQuantity = Number(itemQuantity.value)
     }
-
+    
     function addUserDataToLocalStorage() {
         let userItemKey
 
         if (userColor === "") {
             alert('Vous devez selectionner une couleur')
-        } else if (userQuantity <= 0 || isNaN(userQuantity)) {
-            alert('Vous devez choisir une quantité superieur à 0')
-        } else if (userQuantity > 100) {
-            // itemQuantity.value = 100
-            alert('Quantité maximun de 100 articles')
+        } else if (userQuantity <= 0 || userQuantity > 100 || isNaN(userQuantity)) {
+            alert('Vous devez choisir une quantité comprise entre 1 et 100')
         } else {
             userItemKey = urlId + "_" + userColor
 
@@ -101,9 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem(userItemKey, JSON.stringify(userStorageData))
             }
         }
-        console.log(localStorage)
     }
-
 })
 
 

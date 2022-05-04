@@ -31,11 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCart(data) {
 
         const sectionCartItems = document.getElementById('cart__items')
-
+        
         userCartItems.forEach(element => {
             data.forEach(item => {
                 if (element[0] === item._id) {
-
+                    
                     // Creation des elements
                     let article = createNode('article')
                     let divImg = createNode('div')
@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     divDescription.className = 'cart__item__content__description'
                     itemPrice.className = 'item__price'
                     itemQuantity.className = 'itemQuantity'
-                    pQuantity.className = 'text__quantity'
                     divSettingsDelete.className = 'cart__item__content__settings__delete'
                     pDelete.className = 'deleteItem'
 
@@ -120,16 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modification quantité d'un article
         function quantityChanged(event) {
             let input = event.target
-            let textQuantity = input.parentElement.getElementsByClassName('text__quantity')[0]
+            let textQuantity = input.parentElement.children[0]
             let userStorageData = JSON.parse(localStorage.getItem(getParentAndKey(input)[1]))
             if (isNaN(input.value) || input.value <= 0 || input.value > 100) {
                 input.value = 1
             }
             textQuantity.textContent = 'Qté ' + ': ' + input.value
-            userStorageData.splice(2, 1, +input.value)
+            userStorageData.splice(2, 1, Number(input.value))
             localStorage.setItem(getParentAndKey(input)[1], JSON.stringify(userStorageData))
             updateCart()
-            console.log(localStorage)
         }
 
         // Suppression d'un article
@@ -143,13 +141,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Affichage et mis à jour du panier
         function updateCart() {
             const cartRows = document.getElementsByClassName('cart__item')
+            const totalPrice = document.getElementById('totalPrice')
+            const totalQuantity = document.getElementById('totalQuantity')
             let total = 0
             let quantity = 0
             for (let i = 0; i < cartRows.length; i++) {
                 let cartRow = cartRows[i]
                 let itemPrice = cartRow.getElementsByClassName('item__price')[0]
-                let quantityItem = +cartRow.getElementsByClassName('itemQuantity')[0].value
-                let price = +itemPrice.innerText.replace('€', '')
+                let quantityItem = Number(cartRow.getElementsByClassName('itemQuantity')[0].value)
+                let price = Number(itemPrice.innerText.replace('€', ''))
                 total = total + (price * quantityItem)
                 quantity = quantity + quantityItem
             }
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userOrderObj = { 'contact': {} }
 
     // Recuperation des id des produits du localeStorage
-    function idToArray(arr) {
+    function productIdToArray(arr) {
         let arrTemp = []
         localStorageToArray(arrTemp)
         arrTemp.forEach(element => {
@@ -180,18 +180,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementsByClassName('cart__order__form')[0]
     form.addEventListener('submit', orderValidation)
 
+
     // Envoie des elements après validation 
     function orderValidation(e) {
         e.preventDefault()
 
         const productsOrdered = []
-        idToArray(productsOrdered)
+        productIdToArray(productsOrdered)
         userOrderObj.products = productsOrdered
 
         if (productsOrdered.length == 0) {
             alert('le panier est vide')
         } else if (checkInputs()) {
-            sendData()
+            sendOrderData()
         }
     }
 
@@ -202,76 +203,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Test et validation des champs de formulaire
     function checkInputs() {
-        const firstNameValue = firstName.value.trim()
-        const lastNameValue = lastName.value.trim()
-        const addressValue = address.value.trim()
-        const cityValue = city.value.trim()
-        const emailValue = email.value.trim()
+        const firstNameValue = document.getElementById('firstName').value.trim()
+        const lastNameValue = document.getElementById('lastName').value.trim()
+        const addressValue = document.getElementById('address').value.trim()
+        const cityValue = document.getElementById('city').value.trim()
+        const emailValue = document.getElementById('email').value.trim()
+
+        const firstNameErrorMsg = document.getElementById('firstNameErrorMsg')
+        const lastNameErrorMsg = document.getElementById('lastNameErrorMsg')
+        const addressErrorMsg = document.getElementById('addressErrorMsg')
+        const cityErrorMsg = document.getElementById('cityErrorMsg')
+        const emailErrorMsg = document.getElementById('emailErrorMsg')
+        const errorMsgs = [firstNameErrorMsg, lastNameErrorMsg, addressErrorMsg, cityErrorMsg, emailErrorMsg] 
+        errorMsgs.forEach(element => {
+            element.style.color = 'red'
+            element.textContent = ""
+        })
 
         let nameReg = /^[a-z ,.'-]+$/i;
         let addressReg = /[!@$%^&*(),?":{}|<>]/;
         let emailReg = /[A-z0-9._-]+[@]{1}[a-zA-Z0-9._-]+[.]{1}[a-zA-Z]{2,10}/;
 
-        let validateCount = 0
-        let checkValidate = false
-
         if (!regTest(firstNameValue, nameReg)) {
             firstNameErrorMsg.textContent = "Veuillez entrer un prenom correct"
-            firstNameErrorMsg.style.color = 'red'
+            return false
         }
         else {
-            firstNameErrorMsg.textContent = ""
-            userOrderObj.contact[firstName.name] = firstNameValue
-            validateCount++
+            userOrderObj.contact['firstName'] = firstNameValue
         }
 
         if (!regTest(lastNameValue, nameReg)) {
             lastNameErrorMsg.textContent = "Veuillez entrer un nom correct"
-            lastNameErrorMsg.style.color = 'red'
+            return false
         }
         else {
-            lastNameErrorMsg.textContent = ""
-            userOrderObj.contact[lastName.name] = lastNameValue
-            validateCount++
+            userOrderObj.contact['lastName'] = lastNameValue
         }
 
         if (regTest(addressValue, addressReg)) {
             addressErrorMsg.textContent = "Veuillez entrer une adresse correcte"
-            addressErrorMsg.style.color = 'red'
+            return false
         }
         else {
-            addressErrorMsg.textContent = ""
-            userOrderObj.contact[address.name] = addressValue
-            validateCount++
+            userOrderObj.contact['address'] = addressValue
         }
 
         if (!regTest(cityValue, nameReg)) {
             cityErrorMsg.textContent = "Veuillez entrer une ville correcte"
-            cityErrorMsg.style.color = 'red'
+            return false
         }
         else {
-            cityErrorMsg.textContent = ""
-            userOrderObj.contact[city.name] = cityValue
-            validateCount++
+            userOrderObj.contact['city'] = cityValue
         }
 
         if (!regTest(emailValue, emailReg)) {
             emailErrorMsg.textContent = "Veuillez entrer un email correct"
-            emailErrorMsg.style.color = 'red'
+            return false
         }
         else {
-            emailErrorMsg.textContent = ""
-            userOrderObj.contact[email.name] = emailValue
-            validateCount++
+            userOrderObj.contact['email'] = emailValue
         }
-        if (validateCount === 5) {
-            checkValidate = true
-        }
-        return checkValidate
+        return true
     }
 
     // Envoie des données de la commande vers l'API
-    function sendData() {
+    function sendOrderData() {
         fetch('http://127.0.0.1:3000/api/products/order', {
             method: 'POST',
             headers: {
@@ -284,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((res) => window.location.href = "/front/html/confirmation.html?orderId=" + res.orderId)
             .catch(err => console.error(err))
     }
-
 })
 
 
